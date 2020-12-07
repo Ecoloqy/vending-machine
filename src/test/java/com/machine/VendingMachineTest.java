@@ -2,8 +2,8 @@ package com.machine;
 
 import com.machine.models.Coin;
 import com.machine.models.Product;
+import org.junit.Before;
 import org.junit.Test;
-import org.junit.jupiter.api.BeforeAll;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -12,12 +12,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class VendingMachineTest {
+    private Map<Product, Integer> products;
+    private VendingMachine vendingMachine;
 
-    private static VendingMachine vendingMachine;
-
-    @BeforeAll
-    public static void init() {
-        Map<Product, Integer> products = new HashMap<>();
+    @Before
+    public void init() {
+        products = new HashMap<>();
         products.put(Product.COLA, 5);
         products.put(Product.CANDY, 3);
         products.put(Product.CHIPS, 6);
