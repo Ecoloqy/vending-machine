@@ -2,8 +2,8 @@ package com.machine;
 
 import com.machine.models.Coin;
 import com.machine.models.Product;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,7 +15,7 @@ public class VendingMachineTest {
     private Map<Product, Integer> products;
     private VendingMachine vendingMachine;
 
-    @Before
+    @BeforeEach
     public void init() {
         products = new HashMap<>();
         products.put(Product.COLA, 5);
