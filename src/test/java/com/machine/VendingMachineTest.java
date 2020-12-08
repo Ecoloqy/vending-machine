@@ -13,6 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class VendingMachineTest {
     private Map<Product, Integer> products;
+    private Map<Coin, Integer> coins;
     private VendingMachine vendingMachine;
 
     @BeforeEach
@@ -21,7 +22,13 @@ public class VendingMachineTest {
         products.put(Product.COLA, 5);
         products.put(Product.CANDY, 3);
         products.put(Product.CHIPS, 6);
-        vendingMachine = new VendingMachine(products);
+
+        coins = new HashMap<>();
+        coins.put(Coin.DIME, 8);
+        coins.put(Coin.NICKEL, 3);
+        coins.put(Coin.QUARTER, 12);
+
+        vendingMachine = new VendingMachine(products, coins);
     }
 
     @Test
