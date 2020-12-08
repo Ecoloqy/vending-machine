@@ -247,6 +247,49 @@ public class VendingMachineTest {
 
     @Test
     public void when_tryingToGetReturnWhenVendingMachineIsBroke_expect_notAvailableChangeMessage() {
+        String expectation = "EXACT CHANGE ONLY";
+        coins.remove(Coin.QUARTER);
+        coins.remove(Coin.NICKEL);
+        coins.remove(Coin.DIME);
+        vendingMachine.insertCoin(Coin.QUARTER);
+        vendingMachine.insertCoin(Coin.QUARTER);
+        vendingMachine.insertCoin(Coin.QUARTER);
 
+        vendingMachine.selectProduct(Product.CANDY);
+        String message = vendingMachine.getDisplay();
+
+        assertEquals(expectation, message);
+    }
+
+    @Test
+    public void when_tryingToGetReturnWhenVendingMachineHaveMoney_expect_returnCoinsInInnerValuesThanInserted() {
+        Map<Coin, Integer> expectedCoinReturn = new HashMap<>();
+        expectedCoinReturn.put(Coin.DIME, 1);
+
+        vendingMachine.insertCoin(Coin.QUARTER);
+        vendingMachine.insertCoin(Coin.QUARTER);
+        vendingMachine.insertCoin(Coin.QUARTER);
+
+        vendingMachine.selectProduct(Product.CANDY);
+        Map<Coin, Integer> obtainedCoinReturn = vendingMachine.getCoinReturn();
+
+        assertEquals(expectedCoinReturn, obtainedCoinReturn);
+    }
+
+    @Test
+    public void when_insertedMultiplyCoinsAndMachineDontHaveQuartersAndDimes_expect_returnOnlyInNickels() {
+        Map<Coin, Integer> expectedCoinReturn = new HashMap<>();
+        expectedCoinReturn.put(Coin.NICKEL, 2);
+        coins.remove(Coin.QUARTER);
+        coins.remove(Coin.DIME);
+
+        vendingMachine.insertCoin(Coin.QUARTER);
+        vendingMachine.insertCoin(Coin.QUARTER);
+        vendingMachine.insertCoin(Coin.QUARTER);
+
+        vendingMachine.selectProduct(Product.COLA);
+        Map<Coin, Integer> obtainedCoinReturn = vendingMachine.getCoinReturn();
+
+        assertEquals(expectedCoinReturn, obtainedCoinReturn);
     }
 }
