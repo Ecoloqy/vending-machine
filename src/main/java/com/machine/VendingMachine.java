@@ -42,6 +42,10 @@ public class VendingMachine {
         return coinsReturn;
     }
 
+    /**
+     * @return product if all conditions are met, but null when something goes wrong like no money in vending machine,
+     *      invalid amount of money in machine slot or vending machine can't return exchange
+     */
     public Product selectProduct(Product product) {
         isInPurchaseMode = true;
         if (!productInVendingMachine(product)) {
@@ -81,24 +85,33 @@ public class VendingMachine {
     }
 
     /**
-     * Algorithm to return rest when in vending machine is available coins
+     * <p>And that algorithm works that way...</p>
+     * <p>Method giveReturnToUser() on start checks if it possible to return exchange, in the same time calculates this exchange to minimize loop circuits.</p>
+     * <p>Coins are sorted by coin value from max to min, because if we can return $0.25, we can return 1 QUARTER instead of 2 DIMES and 1 NICKEL, only when
+     * QUARTER is unavailable rest is checked</p>
+     * <p>- On the end if sumOfCoins to return is not equal 0 then there is no variant to return exchange, method returns false and stop further operations.</p>
+     * <p>- If sumOfCoins is equal 0 then there is a way to return exchange and this way is already done and saved as coinsToReturn HashMap.</p>
+     * <p>Next to it is running giveUserReturnAndUpdateEarningsInVendingMachine() method where I change maps each other, like:</p>
+     * <p>- all rest coins in coinsInBuyInMode (pocket where user put coins) are added to coinsInVendingMachine (set of starting machine coins)</p>
+     * <p>- coinsInBuyInMode are cleared because account is now $0.00</p>
+     * <p>- and at the end this coinsToReturn (map of coins that are possible to return) are send to return pocket of vending machine, when user
+     * can grab them and carry out further purchases</p>
      */
-
     private boolean giveReturnToUser(Product product) {
         Map<Coin, Integer> coinsToReturn = new HashMap<>();
 
-        BigDecimal insertedCoinsSum = getSumOfCoinsInBuyInMode().subtract(product.getValue());
+        BigDecimal sumOfCoins = getSumOfCoinsInBuyInMode().subtract(product.getValue());
         List<Coin> validCoinsToReturn = Arrays.stream(Coin.values()).sorted(Comparator.comparing(Coin::getValue).reversed())
                 .filter(e -> !e.equals(Coin.PENNY))
                 .collect(Collectors.toList());
 
         for (Coin coin : validCoinsToReturn) {
             if (!coinInContainer(coin, coinsInBuyInMode) && !coinInContainer(coin, coinsInVendingMachine)) continue;
-            if (insertedCoinsSum.doubleValue() > 0)
-                insertedCoinsSum = updateCoinsByRest(coinsToReturn, insertedCoinsSum, coin);
+            if (sumOfCoins.doubleValue() > 0)
+                sumOfCoins = updateCoinsByRest(coinsToReturn, sumOfCoins, coin);
         }
 
-        if (insertedCoinsSum.compareTo(BigDecimal.ZERO) != 0) return false;
+        if (sumOfCoins.compareTo(BigDecimal.ZERO) != 0) return false;
 
         giveUserReturnAndUpdateEarningsInVendingMachine(coinsToReturn);
         return true;
