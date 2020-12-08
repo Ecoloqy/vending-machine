@@ -6,12 +6,12 @@ import com.machine.models.Product;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class VendingMachine {
     private final Map<Product, Integer> products;
-    private final Map<Coin, Integer> coinsInVendingMachine;
+    private Map<Coin, Integer> coinsInVendingMachine;
     private final Map<Coin, Integer> coinsInBuyInMode = new HashMap<>();
     private final Map<Coin, Integer> coinsReturn = new HashMap<>();
     private String display;
@@ -52,12 +52,11 @@ public class VendingMachine {
             display = calculateNeededSumOfCoinsAndSetUpMessage(product);
             return null;
         }
-        if (!vendingMachineCanReturnCoins(product)) {
+        if (!giveReturnToUser(product)) {
             display = Display.EXACT_CHANGE_ONLY.getMessage();
             return null;
         }
         removeProductFromMachine(product);
-        giveReturnToUser(product);
         clearMachineStatus();
         display = Display.PURCHASE_DONE.getMessage();
         return product;
@@ -66,14 +65,6 @@ public class VendingMachine {
     public void abortPurchase() {
         sendAllCoinsFromOneContainerToAnother(coinsInBuyInMode, coinsReturn);
         coinsInBuyInMode.clear();
-    }
-
-    private void sendAllCoinsFromOneContainerToAnother(Map<Coin, Integer> container1, Map<Coin, Integer> container2) {
-        for (Map.Entry<Coin, Integer> entry : container1.entrySet()) {
-            for (int i = 0; i < entry.getValue(); i++) {
-                addCoinToContainer(entry.getKey(), container2);
-            }
-        }
     }
 
     private boolean productInVendingMachine(Product product) {
@@ -93,27 +84,62 @@ public class VendingMachine {
      * Algorithm to return rest when in vending machine is available coins
      */
 
-    private boolean vendingMachineCanReturnCoins(Product product) {
+    private boolean giveReturnToUser(Product product) {
+        Map<Coin, Integer> coinsToReturn = new HashMap<>();
+
+        BigDecimal insertedCoinsSum = getSumOfCoinsInBuyInMode().subtract(product.getValue());
+        List<Coin> validCoinsToReturn = Arrays.stream(Coin.values()).sorted(Comparator.comparing(Coin::getValue).reversed())
+                                              .filter(e -> !e.equals(Coin.PENNY))
+                                              .collect(Collectors.toList());
+
+        for (Coin coin : validCoinsToReturn) {
+            if (!coinInContainer(coin, coinsInBuyInMode) && !coinInContainer(coin, coinsInVendingMachine)) continue;
+            if (insertedCoinsSum.doubleValue() > 0) insertedCoinsSum = updateCoinsByRest(coinsToReturn, insertedCoinsSum, coin);
+        }
+
+        if (insertedCoinsSum.compareTo(BigDecimal.ZERO) != 0) return false;
+
+        giveUserReturnAndUpdateEarningsInVendingMachine(coinsToReturn);
         return true;
     }
 
-    private void giveReturnToUser(Product product) {
-
+    private void giveUserReturnAndUpdateEarningsInVendingMachine(Map<Coin, Integer> coinsToReturn) {
+        sendAllCoinsFromOneContainerToAnother(coinsInBuyInMode, coinsInVendingMachine);
+        clearMachineStatus();
+        sendAllCoinsFromOneContainerToAnother(coinsToReturn, coinsReturn);
     }
 
-    private Map<Coin, Integer> allCoinsInMachineWithThatInBuyInMode() {
-        Map<Coin, Integer> container = new HashMap<>(coinsInVendingMachine);
-        for (Map.Entry<Coin, Integer> entry : coinsInBuyInMode.entrySet()) {
-            for (int i = 0; i < entry.getValue(); i++) {
-                addCoinToContainer(entry.getKey(), container);
-            }
+    private BigDecimal updateCoinsByRest(Map<Coin, Integer> coinsToReturn, BigDecimal value, Coin coin) {
+        BigDecimal coinAmount = value.divide(coin.getValue(), RoundingMode.FLOOR);
+        BigDecimal coinRest = value.remainder(coin.getValue());
+
+        int counter = coinAmount.intValue();
+        for (int i = 0; i < coinAmount.intValue(); i++) {
+            counter = updateCounterAndSwapPlacesIfCoinExistInVendingMachine(coinsToReturn, coin, counter);
         }
-        return container;
+        return new BigDecimal(counter).add(coinRest);
     }
 
-    /**
-     * End of algorithm to return rest when in vending machine is available coins
-     */
+    private int updateCounterAndSwapPlacesIfCoinExistInVendingMachine(Map<Coin, Integer> coinsToReturn, Coin coin, int counter) {
+        if (coinInContainer(coin, coinsInBuyInMode)) {
+            removeCoinFromFirstContainerAndMoveToSecondContainer(coin, coinsInBuyInMode, coinsToReturn);
+            counter--;
+        } else if (coinInContainer(coin, coinsInVendingMachine)) {
+            removeCoinFromFirstContainerAndMoveToSecondContainer(coin, coinsInVendingMachine, coinsToReturn);
+            counter--;
+        }
+        return counter;
+    }
+
+    private boolean coinInContainer(Coin coin, Map<Coin, Integer> container) {
+        return container.containsKey(coin) && container.get(coin) > 0;
+    }
+
+    private void removeCoinFromFirstContainerAndMoveToSecondContainer(Coin coin, Map<Coin, Integer> container, Map<Coin, Integer> coinsToReturn) {
+        if (container.get(coin) == 1) container.remove(coin);
+        else container.put(coin, container.get(coin) - 1);
+        addCoinToContainer(coin, coinsToReturn);
+    }
 
     private void clearMachineStatus() {
         coinsInBuyInMode.clear();
@@ -145,5 +171,13 @@ public class VendingMachine {
         }
 
         return total.setScale(2, RoundingMode.CEILING);
+    }
+
+    private void sendAllCoinsFromOneContainerToAnother(Map<Coin, Integer> container1, Map<Coin, Integer> container2) {
+        for (Map.Entry<Coin, Integer> entry : container1.entrySet()) {
+            for (int i = 0; i < entry.getValue(); i++) {
+                addCoinToContainer(entry.getKey(), container2);
+            }
+        }
     }
 }
