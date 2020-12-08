@@ -115,7 +115,7 @@ public class VendingMachineTest {
     }
 
     @Test
-    public void when_customerSelectColaWhenInsertedValidPrice_colaIsReturned() {
+    public void when_customerSelectColaWhenInsertedValidPrice_expect_colaIsReturned() {
         Product expectedProduct = Product.COLA;
         vendingMachine.insertCoin(Coin.QUARTER);
         vendingMachine.insertCoin(Coin.QUARTER);
@@ -128,7 +128,37 @@ public class VendingMachineTest {
     }
 
     @Test
-    public void when_customerSelectProductWhenInsertedToMuchMoney_colaIsReturnedAndReturnIsObtained() {
+    public void when_customerSelectProductWhenInsertedNotEnoughMoney_expect_priceOfProductIsDisplayed() {
+        String expectation = "CANDY - PRICE: $0.65, INSERTED: $0.50";
+
+        vendingMachine.insertCoin(Coin.QUARTER);
+        vendingMachine.insertCoin(Coin.QUARTER);
+
+        Product obtainedProduct = vendingMachine.selectProduct(Product.CANDY);
+        String message = vendingMachine.getDisplay();
+
+        assertEquals(expectation, message);
+        assertNull(obtainedProduct);
+    }
+
+    @Test
+    public void when_customerBuyProduct_expect_thankYouMessageShowsAndThenInsertCoinShows() {
+        String expectation = "THANK YOU";
+        String expectation2 = "INSERT COIN";
+
+        vendingMachine.insertCoin(Coin.QUARTER);
+        vendingMachine.insertCoin(Coin.QUARTER);
+
+        vendingMachine.selectProduct(Product.CHIPS);
+        String message = vendingMachine.getDisplay();
+        String message2 = vendingMachine.getDisplay();
+
+        assertEquals(expectation, message);
+        assertEquals(expectation2, message2);
+    }
+
+    @Test
+    public void when_customerSelectProductWhenInsertedToMuchMoney_expect_colaIsReturnedAndReturnIsObtained() {
         Map<Coin, Integer> expectedCoinReturn = new HashMap<>();
         expectedCoinReturn.put(Coin.QUARTER, 1);
 
@@ -143,24 +173,67 @@ public class VendingMachineTest {
     }
 
     @Test
-    public void when_customerSelectProductWhenInsertedNotEnoughMoney_priceOfProductIsDisplayed() {
-        String expectation = "CANDY - PRICE: $0.65, INSERTED: $0.50";
+    public void when_userProvideCoinsEqualsProductValue_expect_noCoinsInReturnSlot() {
+        Map<Coin, Integer> expectedCoinReturn = new HashMap<>();
 
         vendingMachine.insertCoin(Coin.QUARTER);
         vendingMachine.insertCoin(Coin.QUARTER);
+        vendingMachine.insertCoin(Coin.DIME);
+        vendingMachine.insertCoin(Coin.NICKEL);
 
-        Product obtainedProduct = vendingMachine.selectProduct(Product.CANDY);
-        String message = vendingMachine.getDisplay();
+        vendingMachine.selectProduct(Product.CANDY);
+        Map<Coin, Integer> obtainedCoinReturn = vendingMachine.getCoinReturn();
 
-        assertEquals(expectation, message);
-        assertNull(obtainedProduct);
+        assertEquals(expectedCoinReturn, obtainedCoinReturn);
     }
 
     @Test
-    public void when_customerBuyProduct_thankYouMessageShowsAndThenInsertCoinShows() {
-        String expectation = "THANK YOU";
-        String expectation2 = "INSERT COIN";
+    public void when_userSelectAbortButton_expect_messageOnDisplayShowsInsertCoin() {
+        String expectation = "INSERT COIN";
+        vendingMachine.insertCoin(Coin.QUARTER);
+        vendingMachine.insertCoin(Coin.QUARTER);
 
+        vendingMachine.abortPurchase();
+        String message = vendingMachine.getDisplay();
+
+        assertEquals(expectation, message);
+    }
+
+    @Test
+    public void when_userSelectAbortButton_expect_allInsertedMoneyInReturnSlot() {
+        Map<Coin, Integer> expectedCoinReturn = new HashMap<>();
+        expectedCoinReturn.put(Coin.QUARTER, 2);
+        expectedCoinReturn.put(Coin.DIME, 1);
+
+        vendingMachine.insertCoin(Coin.QUARTER);
+        vendingMachine.insertCoin(Coin.QUARTER);
+        vendingMachine.insertCoin(Coin.DIME);
+
+        vendingMachine.abortPurchase();
+        Map<Coin, Integer> obtainedCoinReturn = vendingMachine.getCoinReturn();
+
+        assertEquals(expectedCoinReturn, obtainedCoinReturn);
+    }
+
+    @Test
+    public void when_userSelectProductThatIsUnavailable_expect_machineShowsSoldOutMessageAndThenInsertCoin() {
+        String expectation = "SOLD OUT";
+        String expectation2 = "INSERT COIN";
+        products.remove(Product.CHIPS);
+
+        vendingMachine.selectProduct(Product.CHIPS);
+        String message = vendingMachine.getDisplay();
+        String message2 = vendingMachine.getDisplay();
+
+        assertEquals(expectation, message);
+        assertEquals(expectation2, message2);
+    }
+
+    @Test
+    public void when_userSelectProductThatIsUnavailable_expect_machineShowsSoldOutMessageAndThenAmountOfInsertedMoney() {
+        String expectation = "SOLD OUT";
+        String expectation2 = "$0.50";
+        products.remove(Product.CHIPS);
         vendingMachine.insertCoin(Coin.QUARTER);
         vendingMachine.insertCoin(Coin.QUARTER);
 
@@ -170,5 +243,10 @@ public class VendingMachineTest {
 
         assertEquals(expectation, message);
         assertEquals(expectation2, message2);
+    }
+
+    @Test
+    public void when_tryingToGetReturnWhenVendingMachineIsBroke_expect_notAvailableChangeMessage() {
+
     }
 }
