@@ -5,6 +5,7 @@ import com.machine.models.Display;
 import com.machine.models.Product;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,7 +15,7 @@ public class VendingMachine {
     private final Map<Coin, Integer> coinsInBuyInMode = new HashMap<>();
     private final Map<Coin, Integer> coinsReturn = new HashMap<>();
     private String display;
-    private boolean isPurchaseInProgress = false;
+    private boolean isInPurchaseMode = false;
 
     public VendingMachine(Map<Product, Integer> products, Map<Coin, Integer> coinsInVendingMachine) {
         this.products = products;
@@ -23,7 +24,12 @@ public class VendingMachine {
     }
 
     public String getDisplay() {
-        if (isPurchaseInProgress) isPurchaseInProgress = false;
+        if (isInPurchaseMode) {
+            String toShow = display;
+            updateMoneyOnDisplay();
+            return toShow;
+        }
+        updateMoneyOnDisplay();
         return display;
     }
 
@@ -37,26 +43,59 @@ public class VendingMachine {
     }
 
     public Product selectProduct(Product product) {
-        isPurchaseInProgress = true;
-        if (purchaseCanBeDone()) {
-            doPurchaseOfProduct();
-            display = Display.PURCHASE_DONE.getMessage();
-            return product;
+        isInPurchaseMode = true;
+        if (!productInVendingMachine(product)) {
+            display = "There are no more products of that type.";
+            return null;
         }
-        display = calculateNeededSumOfCoinsAndSetUpMessage(product);
-        return null;
+        if (!insertedEqualOrMoreMoney(product)) {
+            display = calculateNeededSumOfCoinsAndSetUpMessage(product);
+            return null;
+        }
+        if (!vendingMachineCanReturnCoins(product)) {
+            display = "Can't return coins in this state.";
+            return null;
+        }
+        removeProductFromMachine(product);
+        doPurchaseOfProduct(product);
+        clearMachineStatus();
+        display = Display.PURCHASE_DONE.getMessage();
+        return product;
     }
 
-    private boolean purchaseCanBeDone() {
+    private boolean productInVendingMachine(Product product) {
+        return products.containsKey(product) && products.get(product) > 0;
+    }
+
+    private boolean insertedEqualOrMoreMoney(Product product) {
+        return getSumOfCoinsInBuyInMode().doubleValue() >= product.getValue().doubleValue();
+    }
+
+    private boolean vendingMachineCanReturnCoins(Product product) {
         return true;
     }
 
-    private void doPurchaseOfProduct() {
+    private void removeProductFromMachine(Product product) {
+        products.put(product, products.get(product) - 1);
+    }
+
+    private void doPurchaseOfProduct(Product product) {
 
     }
 
+    private BigDecimal updateCoinsByRest(BigDecimal value, Coin coin) {
+        return BigDecimal.ZERO;
+    }
+
+    private void clearMachineStatus() {
+        coinsInBuyInMode.clear();
+    }
+
     private String calculateNeededSumOfCoinsAndSetUpMessage(Product product) {
-        return "";
+        String productName = product.name();
+        BigDecimal valueOfProduct = product.getValue().setScale(2, RoundingMode.CEILING);
+        BigDecimal insertedCoinsValue = getSumOfCoinsInBuyInMode();
+        return productName + " - PRICE: $" + valueOfProduct + ", INSERTED: $" + insertedCoinsValue;
     }
 
     private void addCoinToContainer(Coin coin, Map<Coin, Integer> container) {
@@ -65,12 +104,18 @@ public class VendingMachine {
         updateMoneyOnDisplay();
     }
 
-    private void updateMoneyOnDisplay() {
-        BigDecimal totalCost = BigDecimal.ZERO;
+    private BigDecimal getSumOfCoinsInBuyInMode() {
+        BigDecimal total = BigDecimal.ZERO;
         for (Map.Entry<Coin, Integer> entry : coinsInBuyInMode.entrySet()) {
             BigDecimal itemCost = entry.getKey().getValue().multiply(new BigDecimal(entry.getValue()));
-            totalCost = totalCost.add(itemCost);
+            total = total.add(itemCost);
         }
-        display = totalCost.equals(BigDecimal.ZERO) ? Display.MACHINE_EMPTY.getMessage() : "$" + totalCost;
+
+        return total.setScale(2, RoundingMode.CEILING);
+    }
+
+    private void updateMoneyOnDisplay() {
+        BigDecimal total = getSumOfCoinsInBuyInMode();
+        display = total.compareTo(BigDecimal.ZERO) == 0 ? Display.MACHINE_EMPTY.getMessage() : "$" + total;
     }
 }
