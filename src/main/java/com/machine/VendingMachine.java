@@ -101,6 +101,16 @@ public class VendingMachine {
 
     }
 
+    private Map<Coin, Integer> allCoinsInMachineWithThatInBuyInMode() {
+        Map<Coin, Integer> container = new HashMap<>(coinsInVendingMachine);
+        for (Map.Entry<Coin, Integer> entry : coinsInBuyInMode.entrySet()) {
+            for (int i = 0; i < entry.getValue(); i++) {
+                addCoinToContainer(entry.getKey(), container);
+            }
+        }
+        return container;
+    }
+
     /**
      * End of algorithm to return rest when in vending machine is available coins
      */
