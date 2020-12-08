@@ -45,7 +45,7 @@ public class VendingMachine {
     public Product selectProduct(Product product) {
         isInPurchaseMode = true;
         if (!productInVendingMachine(product)) {
-            display = "There are no more products of that type.";
+            display = Display.PRODUCT_UNAVAILABLE.getMessage();
             return null;
         }
         if (!insertedEqualOrMoreMoney(product)) {
@@ -53,14 +53,27 @@ public class VendingMachine {
             return null;
         }
         if (!vendingMachineCanReturnCoins(product)) {
-            display = "Can't return coins in this state.";
+            display = Display.EXACT_CHANGE_ONLY.getMessage();
             return null;
         }
         removeProductFromMachine(product);
-        doPurchaseOfProduct(product);
+        giveReturnToUser(product);
         clearMachineStatus();
         display = Display.PURCHASE_DONE.getMessage();
         return product;
+    }
+
+    public void abortPurchase() {
+        sendAllCoinsFromOneContainerToAnother(coinsInBuyInMode, coinsReturn);
+        coinsInBuyInMode.clear();
+    }
+
+    private void sendAllCoinsFromOneContainerToAnother(Map<Coin, Integer> container1, Map<Coin, Integer> container2) {
+        for (Map.Entry<Coin, Integer> entry : container1.entrySet()) {
+            for (int i = 0; i < entry.getValue(); i++) {
+                addCoinToContainer(entry.getKey(), container2);
+            }
+        }
     }
 
     private boolean productInVendingMachine(Product product) {
@@ -71,21 +84,26 @@ public class VendingMachine {
         return getSumOfCoinsInBuyInMode().doubleValue() >= product.getValue().doubleValue();
     }
 
+    private void removeProductFromMachine(Product product) {
+        if (products.get(product) == 1) products.remove(product);
+        else products.put(product, products.get(product) - 1);
+    }
+
+    /**
+     * Algorithm to return rest when in vending machine is available coins
+     */
+
     private boolean vendingMachineCanReturnCoins(Product product) {
         return true;
     }
 
-    private void removeProductFromMachine(Product product) {
-        products.put(product, products.get(product) - 1);
-    }
-
-    private void doPurchaseOfProduct(Product product) {
+    private void giveReturnToUser(Product product) {
 
     }
 
-    private BigDecimal updateCoinsByRest(BigDecimal value, Coin coin) {
-        return BigDecimal.ZERO;
-    }
+    /**
+     * End of algorithm to return rest when in vending machine is available coins
+     */
 
     private void clearMachineStatus() {
         coinsInBuyInMode.clear();
@@ -104,6 +122,11 @@ public class VendingMachine {
         updateMoneyOnDisplay();
     }
 
+    private void updateMoneyOnDisplay() {
+        BigDecimal total = getSumOfCoinsInBuyInMode();
+        display = total.compareTo(BigDecimal.ZERO) == 0 ? Display.MACHINE_EMPTY.getMessage() : "$" + total;
+    }
+
     private BigDecimal getSumOfCoinsInBuyInMode() {
         BigDecimal total = BigDecimal.ZERO;
         for (Map.Entry<Coin, Integer> entry : coinsInBuyInMode.entrySet()) {
@@ -112,10 +135,5 @@ public class VendingMachine {
         }
 
         return total.setScale(2, RoundingMode.CEILING);
-    }
-
-    private void updateMoneyOnDisplay() {
-        BigDecimal total = getSumOfCoinsInBuyInMode();
-        display = total.compareTo(BigDecimal.ZERO) == 0 ? Display.MACHINE_EMPTY.getMessage() : "$" + total;
     }
 }
