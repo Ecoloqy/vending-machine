@@ -89,24 +89,19 @@ public class VendingMachine {
 
         BigDecimal insertedCoinsSum = getSumOfCoinsInBuyInMode().subtract(product.getValue());
         List<Coin> validCoinsToReturn = Arrays.stream(Coin.values()).sorted(Comparator.comparing(Coin::getValue).reversed())
-                                              .filter(e -> !e.equals(Coin.PENNY))
-                                              .collect(Collectors.toList());
+                .filter(e -> !e.equals(Coin.PENNY))
+                .collect(Collectors.toList());
 
         for (Coin coin : validCoinsToReturn) {
             if (!coinInContainer(coin, coinsInBuyInMode) && !coinInContainer(coin, coinsInVendingMachine)) continue;
-            if (insertedCoinsSum.doubleValue() > 0) insertedCoinsSum = updateCoinsByRest(coinsToReturn, insertedCoinsSum, coin);
+            if (insertedCoinsSum.doubleValue() > 0)
+                insertedCoinsSum = updateCoinsByRest(coinsToReturn, insertedCoinsSum, coin);
         }
 
         if (insertedCoinsSum.compareTo(BigDecimal.ZERO) != 0) return false;
 
         giveUserReturnAndUpdateEarningsInVendingMachine(coinsToReturn);
         return true;
-    }
-
-    private void giveUserReturnAndUpdateEarningsInVendingMachine(Map<Coin, Integer> coinsToReturn) {
-        sendAllCoinsFromOneContainerToAnother(coinsInBuyInMode, coinsInVendingMachine);
-        clearMachineStatus();
-        sendAllCoinsFromOneContainerToAnother(coinsToReturn, coinsReturn);
     }
 
     private BigDecimal updateCoinsByRest(Map<Coin, Integer> coinsToReturn, BigDecimal value, Coin coin) {
@@ -131,6 +126,12 @@ public class VendingMachine {
         return counter;
     }
 
+    private void giveUserReturnAndUpdateEarningsInVendingMachine(Map<Coin, Integer> coinsToReturn) {
+        sendAllCoinsFromOneContainerToAnother(coinsInBuyInMode, coinsInVendingMachine);
+        clearMachineStatus();
+        sendAllCoinsFromOneContainerToAnother(coinsToReturn, coinsReturn);
+    }
+
     private boolean coinInContainer(Coin coin, Map<Coin, Integer> container) {
         return container.containsKey(coin) && container.get(coin) > 0;
     }
@@ -139,6 +140,12 @@ public class VendingMachine {
         if (container.get(coin) == 1) container.remove(coin);
         else container.put(coin, container.get(coin) - 1);
         addCoinToContainer(coin, coinsToReturn);
+    }
+
+    private void addCoinToContainer(Coin coin, Map<Coin, Integer> container) {
+        if (container.containsKey(coin)) container.put(coin, container.get(coin) + 1);
+        else container.put(coin, 1);
+        updateMoneyOnDisplay();
     }
 
     private void clearMachineStatus() {
@@ -150,12 +157,6 @@ public class VendingMachine {
         BigDecimal valueOfProduct = product.getValue().setScale(2, RoundingMode.CEILING);
         BigDecimal insertedCoinsValue = getSumOfCoinsInBuyInMode();
         return productName + " - PRICE: $" + valueOfProduct + ", INSERTED: $" + insertedCoinsValue;
-    }
-
-    private void addCoinToContainer(Coin coin, Map<Coin, Integer> container) {
-        if (container.containsKey(coin)) container.put(coin, container.get(coin) + 1);
-        else container.put(coin, 1);
-        updateMoneyOnDisplay();
     }
 
     private void updateMoneyOnDisplay() {
