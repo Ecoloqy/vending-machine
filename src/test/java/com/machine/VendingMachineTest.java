@@ -287,7 +287,7 @@ public class VendingMachineTest {
         vendingMachine.insertCoin(Coin.QUARTER);
         vendingMachine.insertCoin(Coin.QUARTER);
 
-        vendingMachine.selectProduct(Product.COLA);
+        vendingMachine.selectProduct(Product.CANDY);
         Map<Coin, Integer> obtainedCoinReturn = vendingMachine.getCoinReturn();
 
         assertEquals(expectedCoinReturn, obtainedCoinReturn);
