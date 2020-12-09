@@ -130,10 +130,12 @@ public class VendingMachine {
 
     private int updateCounterAndSwapPlacesIfCoinExistInVendingMachine(Map<Coin, Integer> coinsToReturn, Coin coin, int counter) {
         if (coinInContainer(coin, coinsInBuyInMode)) {
-            removeCoinFromFirstContainerAndMoveToSecondContainer(coin, coinsInBuyInMode, coinsToReturn);
+            removeCoinFromContainer(coin, coinsInBuyInMode);
+            addCoinToContainer(coin, coinsToReturn);
             counter--;
         } else if (coinInContainer(coin, coinsInVendingMachine)) {
-            removeCoinFromFirstContainerAndMoveToSecondContainer(coin, coinsInVendingMachine, coinsToReturn);
+            removeCoinFromContainer(coin, coinsInVendingMachine);
+            addCoinToContainer(coin, coinsToReturn);
             counter--;
         }
         return counter;
@@ -149,10 +151,10 @@ public class VendingMachine {
         return container.containsKey(coin) && container.get(coin) > 0;
     }
 
-    private void removeCoinFromFirstContainerAndMoveToSecondContainer(Coin coin, Map<Coin, Integer> container, Map<Coin, Integer> coinsToReturn) {
+    private void removeCoinFromContainer(Coin coin, Map<Coin, Integer> container) {
         if (container.get(coin) == 1) container.remove(coin);
         else container.put(coin, container.get(coin) - 1);
-        addCoinToContainer(coin, coinsToReturn);
+        updateMoneyOnDisplay();
     }
 
     private void addCoinToContainer(Coin coin, Map<Coin, Integer> container) {
