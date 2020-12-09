@@ -107,8 +107,7 @@ public class VendingMachine {
 
         for (Coin coin : validCoinsToReturn) {
             if (!coinInContainer(coin, coinsInBuyInMode) && !coinInContainer(coin, coinsInVendingMachine)) continue;
-            if (sumOfCoins.doubleValue() > 0)
-                sumOfCoins = updateCoinsByRest(coinsToReturn, sumOfCoins, coin);
+            if (sumOfCoins.doubleValue() > 0) sumOfCoins = updateCoinsByRest(coinsToReturn, sumOfCoins, coin);
         }
 
         if (sumOfCoins.compareTo(BigDecimal.ZERO) != 0) return false;
@@ -121,27 +120,29 @@ public class VendingMachine {
         BigDecimal coinAmount = value.divide(coin.getValue(), RoundingMode.FLOOR);
         BigDecimal coinRest = value.remainder(coin.getValue());
 
-        List<Coin> coinsToAdd = new ArrayList<>();
-        int counter = coinAmount.intValue();
-        for (int i = 0; i < coinAmount.intValue(); i++) {
-            counter = updateCounterAndSwapPlacesIfCoinExistInVendingMachine(coinsToAdd, coin, counter);
-        }
-
-        addMultipleCoinsToContainer(coinsToAdd, coinsToReturn);
-        return new BigDecimal(counter).add(coinRest);
+        int newCoinAmount = updateCounterAndSwapPlacesIfCoinExistInVendingMachine(coinsToReturn, coin, coinAmount.intValue());
+        return new BigDecimal(newCoinAmount).add(coinRest);
     }
 
-    private int updateCounterAndSwapPlacesIfCoinExistInVendingMachine(List<Coin> coinsToAdd, Coin coin, int counter) {
-        if (coinInContainer(coin, coinsInBuyInMode)) {
+    private int updateCounterAndSwapPlacesIfCoinExistInVendingMachine(Map<Coin, Integer> coinsToReturn, Coin coin, int counter) {
+        List<Coin> coinsToAddToCoinsReturn = new ArrayList<>();
+        while (isInContainerAndCounterGreaterThanZero(coinsInBuyInMode, coin, counter)) {
             removeCoinFromContainer(coin, coinsInBuyInMode);
-            coinsToAdd.add(coin);
-            counter--;
-        } else if (coinInContainer(coin, coinsInVendingMachine)) {
-            removeCoinFromContainer(coin, coinsInVendingMachine);
-            coinsToAdd.add(coin);
+            coinsToAddToCoinsReturn.add(coin);
             counter--;
         }
+        while (isInContainerAndCounterGreaterThanZero(coinsInVendingMachine, coin, counter)) {
+            removeCoinFromContainer(coin, coinsInVendingMachine);
+            coinsToAddToCoinsReturn.add(coin);
+            counter--;
+        }
+
+        addMultipleCoinsToContainer(coinsToAddToCoinsReturn, coinsToReturn);
         return counter;
+    }
+
+    private boolean isInContainerAndCounterGreaterThanZero(Map<Coin, Integer> container, Coin coin, int counter) {
+        return coinInContainer(coin, container) && counter > 0;
     }
 
     private void giveUserReturnAndUpdateEarningsInVendingMachine(Map<Coin, Integer> coinsToReturn) {
@@ -161,9 +162,13 @@ public class VendingMachine {
     }
 
     private void addMultipleCoinsToContainer(List<Coin> coins, Map<Coin, Integer> container) {
-        for (Coin coin : coins) {
-            addCoinToContainer(coin, container);
+        // IntelliJ prompts to use HashSet constructor when I like to convert coins list to set
+        for (Coin coin : new HashSet<>(coins)) {
+            int howMuchCoinsInListOfOneType = (int) coins.stream().filter(e -> e.equals(coin)).count();
+            if (container.containsKey(coin)) container.put(coin, container.get(coin) + howMuchCoinsInListOfOneType);
+            else container.put(coin, howMuchCoinsInListOfOneType);
         }
+        updateMoneyOnDisplay();
     }
 
     private void addCoinToContainer(Coin coin, Map<Coin, Integer> container) {
