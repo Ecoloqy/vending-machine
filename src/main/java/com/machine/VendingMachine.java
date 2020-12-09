@@ -121,21 +121,24 @@ public class VendingMachine {
         BigDecimal coinAmount = value.divide(coin.getValue(), RoundingMode.FLOOR);
         BigDecimal coinRest = value.remainder(coin.getValue());
 
+        List<Coin> coinsToAdd = new ArrayList<>();
         int counter = coinAmount.intValue();
         for (int i = 0; i < coinAmount.intValue(); i++) {
-            counter = updateCounterAndSwapPlacesIfCoinExistInVendingMachine(coinsToReturn, coin, counter);
+            counter = updateCounterAndSwapPlacesIfCoinExistInVendingMachine(coinsToAdd, coin, counter);
         }
+
+        addMultipleCoinsToContainer(coinsToAdd, coinsToReturn);
         return new BigDecimal(counter).add(coinRest);
     }
 
-    private int updateCounterAndSwapPlacesIfCoinExistInVendingMachine(Map<Coin, Integer> coinsToReturn, Coin coin, int counter) {
+    private int updateCounterAndSwapPlacesIfCoinExistInVendingMachine(List<Coin> coinsToAdd, Coin coin, int counter) {
         if (coinInContainer(coin, coinsInBuyInMode)) {
             removeCoinFromContainer(coin, coinsInBuyInMode);
-            addCoinToContainer(coin, coinsToReturn);
+            coinsToAdd.add(coin);
             counter--;
         } else if (coinInContainer(coin, coinsInVendingMachine)) {
             removeCoinFromContainer(coin, coinsInVendingMachine);
-            addCoinToContainer(coin, coinsToReturn);
+            coinsToAdd.add(coin);
             counter--;
         }
         return counter;
@@ -155,6 +158,12 @@ public class VendingMachine {
         if (container.get(coin) == 1) container.remove(coin);
         else container.put(coin, container.get(coin) - 1);
         updateMoneyOnDisplay();
+    }
+
+    private void addMultipleCoinsToContainer(List<Coin> coins, Map<Coin, Integer> container) {
+        for (Coin coin : coins) {
+            addCoinToContainer(coin, container);
+        }
     }
 
     private void addCoinToContainer(Coin coin, Map<Coin, Integer> container) {

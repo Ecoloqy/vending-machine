@@ -12,18 +12,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class VendingMachineTest {
-    private Map<Product, Integer> products;
-    private Map<Coin, Integer> coins;
+    private final Map<Product, Integer> products = new HashMap<>();
+    private final Map<Coin, Integer> coins = new HashMap<>();
     private VendingMachine vendingMachine;
 
     @BeforeEach
     public void init() {
-        products = new HashMap<>();
+        products.clear();
         products.put(Product.COLA, 5);
         products.put(Product.CANDY, 3);
         products.put(Product.CHIPS, 6);
 
-        coins = new HashMap<>();
+        coins.clear();
         coins.put(Coin.DIME, 8);
         coins.put(Coin.NICKEL, 3);
         coins.put(Coin.QUARTER, 12);
